@@ -1,0 +1,17 @@
+{
+  "name": "clio-kit",
+  "description": "Iris output style with valy, oracle, triz, mnemosyne and pr-voice agents, plus a shared AnythingLLM for oracle.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Valy"
+  },
+  "userConfig": {
+    "github_token": {
+      "type": "string",
+      "title": "GitHub token",
+      "description": "GitHub token for the GitHub MCP server that oracle uses for retrieval.",
+      "sensitive": true,
+      "required": false
+    }
+  }
+}

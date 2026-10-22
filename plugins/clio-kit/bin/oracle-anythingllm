@@ -1,0 +1,89 @@
+#!/bin/sh
+# Ensures the shared AnythingLLM instance and prints its base URL and API key.
+#
+# Usage: oracle-anythingllm <data-dir>
+# <data-dir> is ${CLAUDE_PLUGIN_DATA}/anythingllm, substituted into oracle's
+# prompt (the variable is not exported to Bash). One instance serves every
+# project; oracle separates topics by workspace.
+#
+# Reuses a running container that mounts <data-dir> as its storage. Otherwise
+# starts one (or restarts the stopped one) on a random 127.0.0.1 port. The API
+# key is generated on the instance and cached in <data-dir>/.oracle-api-key
+# (mode 600). No key is ever stored in this plugin.
+#
+# Env overrides: ANYTHINGLLM_IMAGE, OLLAMA_BASE_PATH, ANYTHINGLLM_LLM_MODEL,
+# ANYTHINGLLM_EMBED_MODEL.
+set -eu
+
+die() { echo "oracle-anythingllm: $*" >&2; exit 1; }
+
+DATA="${1:-}"
+case "$DATA" in
+  /*) ;;
+  *) die "usage: oracle-anythingllm <absolute data dir>" ;;
+esac
+# an unsubstituted ${CLAUDE_PLUGIN_DATA} expands to empty and yields /anythingllm
+[ "$(dirname "$DATA")" != "/" ] || die "refusing data dir $DATA (CLAUDE_PLUGIN_DATA not substituted?)"
+
+KEYFILE="$DATA/.oracle-api-key"
+IMAGE="${ANYTHINGLLM_IMAGE:-mintplexlabs/anythingllm:latest}"
+OLLAMA="${OLLAMA_BASE_PATH:-http://host.docker.internal:11434}"
+NAME="clio-kit-anythingllm"
+
+command -v docker >/dev/null || die "docker not found"
+docker info >/dev/null 2>&1 || die "docker daemon not running"
+
+mkdir -p "$DATA"
+
+# a running container whose storage is this data dir
+find_running() {
+  for id in $(docker ps -q); do
+    if docker inspect -f '{{range .Mounts}}{{println .Source}}{{end}}' "$id" | grep -qxF "$DATA"; then
+      echo "$id"; return
+    fi
+  done
+}
+
+CID="$(find_running)"
+if [ -z "$CID" ]; then
+  if docker container inspect "$NAME" >/dev/null 2>&1; then
+    docker start "$NAME" >/dev/null
+  else
+    # mirrors the reference compose: localhost-only port, ollama on the host
+    docker run -d --name "$NAME" --restart unless-stopped \
+      -p 127.0.0.1::3001 --cap-add SYS_ADMIN \
+      -v "$DATA:/app/server/storage" \
+      -e STORAGE_DIR=/app/server/storage \
+      -e LLM_PROVIDER=ollama -e OLLAMA_BASE_PATH="$OLLAMA" \
+      -e OLLAMA_MODEL_PREF="${ANYTHINGLLM_LLM_MODEL:-qwen2.5-coder:14b}" \
+      -e EMBEDDING_ENGINE=ollama -e EMBEDDING_BASE_PATH="$OLLAMA" \
+      -e EMBEDDING_MODEL_PREF="${ANYTHINGLLM_EMBED_MODEL:-nomic-embed-8k}" \
+      -e EMBEDDING_MODEL_MAX_CHUNK_LENGTH=8192 \
+      "$IMAGE" >/dev/null
+  fi
+  CID="$NAME"
+fi
+
+PORT="$(docker port "$CID" 3001/tcp | head -1 | sed 's/.*://')"
+[ -n "$PORT" ] || die "container $CID does not publish port 3001"
+URL="http://127.0.0.1:$PORT"
+
+i=0
+until curl -sf "$URL/api/ping" >/dev/null; do
+  i=$((i + 1)); [ "$i" -lt 90 ] || die "$URL did not come up"; sleep 2
+done
+
+key_ok() {
+  [ -s "$KEYFILE" ] && curl -sf -H "Authorization: Bearer $(cat "$KEYFILE")" "$URL/api/v1/auth" >/dev/null
+}
+
+if ! key_ok; then
+  # only an instance without auth allows this; a password-protected one needs a key made in its UI
+  KEY="$(curl -sf -X POST "$URL/api/system/generate-api-key" | sed -n 's/.*"secret":"\([^"]*\)".*/\1/p')"
+  [ -n "$KEY" ] || die "could not generate an API key on $URL (instance requires auth?)"
+  (umask 077; printf '%s' "$KEY" > "$KEYFILE")
+  key_ok || die "generated key rejected by $URL"
+fi
+
+echo "ANYTHINGLLM_BASE_URL=$URL"
+echo "ANYTHINGLLM_API_KEY=$(cat "$KEYFILE")"

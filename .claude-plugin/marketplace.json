@@ -1,0 +1,16 @@
+{
+  "name": "clio-marketplace",
+  "owner": {
+    "name": "Valy"
+  },
+  "metadata": {
+    "description": "Valy's Claude Code plugins."
+  },
+  "plugins": [
+    {
+      "name": "clio-kit",
+      "source": "./plugins/clio-kit",
+      "description": "Iris output style, valy/oracle/triz/mnemosyne/pr-voice agents, and a shared AnythingLLM for oracle."
+    }
+  ]
+}
