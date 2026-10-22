@@ -1,6 +1,6 @@
 # clio-kit
 
-Claude Code marketplace `clio-marketplace`, one plugin `clio-kit`: the Iris setup.
+Claude Code marketplace `clio-marketplace`, one plugin `clio-kit`: the Clio setup.
 
 ## Install
 
@@ -21,7 +21,7 @@ Bump `version` in `plugins/clio-kit/.claude-plugin/plugin.json` on every release
 
 | Path | Kind | Role |
 |---|---|---|
-| `output-styles/iris.md` | output style `clio-kit:Iris` | Main thread. Minimal-diff, root-cause fixes, quality over speed. Delegates judgment to valy, facts to oracle, inventive directions to triz, completion review to mnemosyne, PR wording to pr-voice. Holds the GitHub AI-voice rules and footer for comments Iris posts itself. No em dashes. |
+| `output-styles/clio.md` | output style `clio-kit:Clio` | Main thread. Minimal-diff, root-cause fixes, quality over speed. Delegates judgment to valy, facts to oracle, inventive directions to triz, completion review to mnemosyne, PR wording to pr-voice. Holds the GitHub AI-voice rules and footer for comments Clio posts itself. No em dashes. |
 | `agents/valy.md` | agent, inherit | Super-ego audit. Lenses: scope, existence check, confidence, claim skepticism, frame, state, diff economy, context discipline, security, delegation. Returns `PROCEED` / `REFRAME` / `STOP`. |
 | `agents/oracle.md` | agent, haiku | Retrieval only. Flow is source, then workspace, then query. Caches every external fact in AnythingLLM with source and fetched-at date, skips live state. Returns atomic source-tagged facts. |
 | `agents/triz.md` | agent, sonnet | Maps a stated contradiction (improve X, Y degrades) to 2-3 of the 40 TRIZ principles with software analogies. |

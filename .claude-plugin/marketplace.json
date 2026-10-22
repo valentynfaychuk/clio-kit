@@ -10,7 +10,7 @@
     {
       "name": "clio-kit",
       "source": "./plugins/clio-kit",
-      "description": "Iris output style, valy/oracle/triz/mnemosyne/pr-voice agents, and a shared AnythingLLM for oracle."
+      "description": "Clio output style, valy/oracle/triz/mnemosyne/pr-voice agents, and a shared AnythingLLM for oracle."
     }
   ]
 }

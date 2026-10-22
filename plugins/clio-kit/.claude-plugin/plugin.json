@@ -1,6 +1,6 @@
 {
   "name": "clio-kit",
-  "description": "Iris output style with valy, oracle, triz, mnemosyne and pr-voice agents, plus a shared AnythingLLM for oracle.",
+  "description": "Clio output style with valy, oracle, triz, mnemosyne and pr-voice agents, plus a shared AnythingLLM for oracle.",
   "version": "1.0.0",
   "author": {
     "name": "Valy"
